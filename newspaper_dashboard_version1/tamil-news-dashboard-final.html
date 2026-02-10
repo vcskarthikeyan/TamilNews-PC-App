@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>தமிழ் செய்தி டாஷ்போர்டு</title>
+<style>
+/* ─── reset & base ─────────────────────────────────────────────── */
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    min-height:100vh;
+    padding:20px;
+}
+.container { max-width:1200px; margin:0 auto; }
+
+/* ─── header ───────────────────────────────────────────────────── */
+header {
+    background:#fff; padding:25px; border-radius:15px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2); margin-bottom:30px;
+    text-align:center;
+}
+h1 { color:#2c3e50; font-size:2.4em; margin-bottom:6px; }
+.live-dot {
+    display:inline-block; width:13px; height:13px;
+    background:#e74c3c; border-radius:50%;
+    animation:blink 1.5s infinite; margin-right:8px;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.subtitle { color:#7f8c8d; font-size:1.05em; margin-bottom:14px; }
+
+/* ─── controls row ─────────────────────────────────────────────── */
+.controls {
+    display:flex; justify-content:center; align-items:center;
+    gap:12px; flex-wrap:wrap; margin-top:14px;
+}
+.timer-pill {
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:#fff; padding:10px 20px; border-radius:25px;
+    font-weight:bold; font-size:.95em;
+}
+.btn {
+    background:#27ae60; color:#fff; border:none;
+    padding:10px 22px; border-radius:25px;
+    cursor:pointer; font-size:.95em; font-weight:bold;
+    transition:all .25s;
+}
+.btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 5px 15px rgba(39,174,96,.4); }
+.btn:disabled  { background:#95a5a6; cursor:not-allowed; }
+.btn-papers  { background:#8e44ad; }
+.btn-papers:hover:not(:disabled) { box-shadow:0 5px 15px rgba(142,68,173,.4); }
+.count-pill { color:#34495e; font-size:.88em; padding:7px 14px; background:#ecf0f1; border-radius:20px; }
+
+/* status badge */
+.badge { display:inline-block; padding:4px 12px; border-radius:14px; font-size:.82em; font-weight:bold; margin-left:8px; }
+.badge-ready   { background:#27ae60; color:#fff; }
+.badge-working { background:#f39c12; color:#fff; }
+.badge-error   { background:#e74c3c; color:#fff; }
+
+/* ─── newspaper picker panel ──────────────────────────────────── */
+.picker-panel {
+    display:none;
+    margin-top:18px; background:#f4f6f9; border:1px solid #dce3ea;
+    padding:20px 24px; border-radius:12px; text-align:left;
+    max-width:680px; margin-left:auto; margin-right:auto;
+}
+.picker-panel.open { display:block; animation:fadeIn .25s ease; }
+
+.picker-header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:14px;
+}
+.picker-header h3 { color:#2c3e50; font-size:1.05em; }
+.picker-actions { display:flex; gap:8px; }
+.picker-actions button {
+    background:#ecf0f1; color:#555; border:none;
+    padding:5px 13px; border-radius:18px; font-size:.82em;
+    cursor:pointer; font-weight:600; transition:background .2s;
+}
+.picker-actions button:hover { background:#dce3ea; }
+
+.picker-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+    gap:8px;
+}
+.picker-item {
+    display:flex; align-items:center; gap:10px;
+    background:#fff; border:1.5px solid #e0e4ea;
+    border-radius:9px; padding:9px 12px;
+    cursor:pointer; transition:border-color .2s, background .2s;
+    user-select:none;
+}
+.picker-item:hover { border-color:#667eea; background:#fafbff; }
+.picker-item.checked { border-color:#667eea; background:#eef1ff; }
+
+.picker-item input[type=checkbox] {
+    width:18px; height:18px; accent-color:#667eea;
+    cursor:pointer; flex-shrink:0;
+}
+.picker-item .paper-names { display:flex; flex-direction:column; }
+.picker-item .paper-tamil  { font-weight:700; color:#2c3e50; font-size:.92em; }
+.picker-item .paper-english{ color:#7f8c8d;  font-size:.78em; }
+
+.picker-note {
+    margin-top:12px; color:#95a5a6; font-size:.82em; text-align:center;
+}
+
+/* ─── news list ────────────────────────────────────────────────── */
+.news-list {
+    background:#fff; border-radius:15px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2); padding:20px;
+}
+.news-item {
+    display:flex; gap:16px; padding:18px 0;
+    border-bottom:2px solid #ecf0f1;
+    transition:background .25s;
+}
+.news-item:last-child { border-bottom:none; }
+.news-item:hover      { background:#fafbfc; }
+
+/* number circle */
+.num-circle {
+    flex-shrink:0; width:46px; height:46px; border-radius:50%;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:#fff; font-weight:bold; font-size:1.15em;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 8px rgba(102,126,234,.3);
+}
+.num-circle.trending {
+    background:linear-gradient(135deg,#e74c3c,#c0392b);
+    box-shadow:0 2px 8px rgba(231,76,60,.4);
+    animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+/* card body */
+.card-body { flex:1; min-width:0; }
+.news-meta {
+    display:flex; gap:8px; align-items:center;
+    flex-wrap:wrap; margin-bottom:7px;
+}
+.source-pill {
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:#fff; padding:3px 11px; border-radius:14px;
+    font-size:.75em; font-weight:bold;
+}
+.time-text { color:#95a5a6; font-size:.84em; }
+.trending-badge {
+    background:linear-gradient(135deg,#e74c3c,#c0392b);
+    color:#fff; padding:3px 10px; border-radius:14px;
+    font-size:.74em; font-weight:bold;
+    animation:glow 2s ease-in-out infinite;
+}
+@keyframes glow { 0%,100%{box-shadow:0 0 4px rgba(231,76,60,.5)} 50%{box-shadow:0 0 14px rgba(231,76,60,.8)} }
+
+.news-title {
+    font-size:1.25em; font-weight:bold;
+    color:#2c3e50; line-height:1.4;
+}
+.news-title a { color:#2c3e50; text-decoration:none; transition:color .25s; }
+.news-title a:hover { color:#667eea; }
+
+/* expand button – circular, pinned right */
+.expand-btn {
+    flex-shrink:0;
+    width:40px; height:40px; border-radius:50%;
+    background:#3498db; color:#fff; border:none;
+    font-size:1.2em; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .2s, transform .2s;
+    align-self:flex-start;
+}
+.expand-btn:hover { background:#2980b9; transform:scale(1.1); }
+
+/* full content block */
+.news-content {
+    display:none; margin-top:10px; padding:14px 16px;
+    background:#f8f9fa; border-left:4px solid #667eea;
+    border-radius:6px; line-height:1.85; color:#555;
+    text-align:justify; white-space:pre-line;
+    max-height:500px; overflow-y:auto;
+}
+.news-content.open { display:block; animation:fadeIn .3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── loading / empty ──────────────────────────────────────────── */
+.loading { text-align:center; padding:60px 20px; }
+.spinner {
+    width:48px; height:48px; border:4px solid #eee;
+    border-top-color:#667eea; border-radius:50%;
+    animation:spin 1s linear infinite; margin:0 auto 20px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ─── responsive ───────────────────────────────────────────────── */
+@media(max-width:600px) {
+    h1 { font-size:1.7em; }
+    .news-item { flex-direction:column; }
+    .num-circle { width:38px; height:38px; font-size:1em; }
+    .picker-grid { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ── header ─────────────────────────────────────────────────── -->
+<header>
+  <h1><span class="live-dot"></span>தமிழ் செய்தி டாஷ்போர்டு</h1>
+  <div class="subtitle">🔥 Trending First &nbsp;|&nbsp; 📰 All Headlines &nbsp;|&nbsp; ⏰ Real Timestamps &nbsp;|&nbsp; 🔄 Auto-Refresh Every 15 min</div>
+
+  <div class="controls">
+    <div class="timer-pill">
+      ⏱️ Next refresh in: <span id="countdown">15:00</span>
+      <span id="badge" class="badge badge-ready">Ready</span>
+    </div>
+    <button class="btn" id="refreshBtn" onclick="manualRefresh()">🔄 Refresh Now</button>
+    <button class="btn btn-papers" onclick="togglePicker()">📰 Newspapers</button>
+    <div class="count-pill" id="countPill">📰 …</div>
+  </div>
+
+  <!-- newspaper picker panel ─────────────────────────────────── -->
+  <div id="pickerPanel" class="picker-panel">
+    <div class="picker-header">
+      <h3>📰  newspapers – தேர்ந்தெடுங்கள்</h3>
+      <div class="picker-actions">
+        <button onclick="setAll(true)">Select All</button>
+        <button onclick="setAll(false)">Clear All</button>
+      </div>
+    </div>
+    <div class="picker-grid" id="pickerGrid">
+      <!-- populated by JS -->
+    </div>
+    <div class="picker-note">தேர்ந்தெடுக்கும் பட்ববை ஆண்ணடர் file-ல் சேம்பிடப்படுகிறது – refresh-ஐ பார்க்க வேண்டும்</div>
+  </div>
+</header>
+
+<!-- ── news list ───────────────────────────────────────────────── -->
+<div class="news-list" id="newsList">
+  <div class="loading"><div class="spinner"></div><p>Loading latest Tamil news…</p></div>
+</div>
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+// ── config ──────────────────────────────────────────────────────
+const BASE      = 'http://localhost:5000';
+const POLL_MS   = 5000;
+const REFRESH_S = 900;
+
+// ── state ───────────────────────────────────────────────────────
+let countdown   = REFRESH_S;
+let lastMtime   = 0;
+let fetching    = false;
+let allArticles = [];          // full list from server (never mutated)
+let catalogue   = [];          // [{key, tamil, english, selected}]
+
+// ── badge ───────────────────────────────────────────────────────
+function setBadge(text, cls) {
+    const b = document.getElementById('badge');
+    b.textContent = text;
+    b.className   = 'badge badge-' + cls;
+}
+
+// ── time formatter ──────────────────────────────────────────────
+function fmtTime(isoStr) {
+    if (!isoStr) return 'நேர தெரியாது';
+    try {
+        const d = new Date(isoStr);
+        if (isNaN(d)) return isoStr;
+        const h  = d.getHours();
+        const m  = String(d.getMinutes()).padStart(2,'0');
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12  = h % 12 || 12;
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return `${h12}:${m} ${ampm}, ${months[d.getMonth()]} ${d.getDate()}`;
+    } catch { return isoStr; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NEWSPAPER PICKER
+// ═══════════════════════════════════════════════════════════════
+
+function togglePicker() {
+    document.getElementById('pickerPanel').classList.toggle('open');
+}
+
+/** Render the checkbox grid from the catalogue array */
+function renderPicker() {
+    const grid = document.getElementById('pickerGrid');
+    grid.innerHTML = catalogue.map((p, idx) => `
+        <label class="picker-item ${p.selected ? 'checked' : ''}" onclick="togglePaper(${idx})">
+            <input type="checkbox" ${p.selected ? 'checked' : ''} onclick="event.stopPropagation()">
+            <div class="paper-names">
+                <span class="paper-tamil">${p.tamil}</span>
+                <span class="paper-english">${p.english}</span>
+            </div>
+        </label>
+    `).join('');
+}
+
+/** Toggle one paper on / off, persist, re-render news */
+async function togglePaper(idx) {
+    catalogue[idx].selected = !catalogue[idx].selected;
+    // never allow zero selection
+    if (!catalogue.some(p => p.selected)) {
+        catalogue[idx].selected = true;   // undo
+        return;
+    }
+    renderPicker();
+    await persistAndRefresh();
+}
+
+/** Select-all / clear-all helper */
+async function setAll(val) {
+    catalogue.forEach(p => p.selected = val);
+    if (!val) catalogue[0].selected = true;   // at least one
+    renderPicker();
+    await persistAndRefresh();
+}
+
+/** POST selection to server, then pull fresh news */
+async function persistAndRefresh() {
+    const keys = catalogue.filter(p => p.selected).map(p => p.key);
+    try {
+        await fetch(`${BASE}/api/newspapers`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ selected: keys }),
+        });
+    } catch(e) { console.error('save error', e); }
+
+    // trigger a fresh scrape so the feed updates immediately
+    await loadNews('fresh');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NEWS RENDERING  (filters by current catalogue selection)
+// ═══════════════════════════════════════════════════════════════
+
+function getSelectedKeys() {
+    return new Set(catalogue.filter(p => p.selected).map(p => p.key));
+}
+
+function render(articles) {
+    const list = document.getElementById('newsList');
+
+    // filter to only selected newspapers
+    const sel      = getSelectedKeys();
+    const filtered = articles.filter(a => sel.has(a.sourceKey));
+
+    // re-number after filter
+    filtered.forEach((a, i) => { a.number = i + 1; });
+
+    if (!filtered.length) {
+        list.innerHTML = '<div class="loading"><p style="color:#e74c3c">No news available – check your newspaper selection or wait for next refresh.</p></div>';
+        return;
+    }
+
+    const trending = filtered.filter(a =>  a.is_trending);
+    const regular  = filtered.filter(a => !a.is_trending);
+    document.getElementById('countPill').textContent =
+        `📰 Total: ${filtered.length}  |  🔥 Trending: ${trending.length}  |  📄 Headlines: ${regular.length}  |  Updated: ${new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'})}`;
+
+    list.innerHTML = filtered.map((a, i) => `
+        <div class="news-item">
+            <div class="num-circle ${a.is_trending ? 'trending' : ''}">${a.number}</div>
+            <div class="card-body">
+                <div class="news-meta">
+                    <span class="source-pill">${a.source} / ${a.sourceEn}</span>
+                    <span class="time-text">🕐 ${a.published_time || fmtTime(a.timestamp)}</span>
+                    ${a.is_trending ? '<span class="trending-badge">🔥 Trending</span>' : ''}
+                </div>
+                <div class="news-title">
+                    <a href="${a.url}" target="_blank" rel="noopener">${a.title}</a>
+                </div>
+                ${a.content && a.content.trim().length > 0 ? `<div class="news-content" id="body-${i}">${a.content}</div>` : ''}
+            </div>
+            ${a.content && a.content.trim().length > 0 ? `<button class="expand-btn" onclick="toggleContent(this, 'body-${i}')">▼</button>` : ''}
+        </div>
+    `).join('');
+}
+
+function toggleContent(btn, id) {
+    const el = document.getElementById(id);
+    if (el.classList.contains('open')) {
+        el.classList.remove('open');
+        btn.textContent = '▼';
+    } else {
+        el.classList.add('open');
+        btn.textContent = '▲';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FETCH  &  REFRESH
+// ═══════════════════════════════════════════════════════════════
+
+async function loadNews(mode) {
+    if (fetching) return;
+    fetching = true;
+    setBadge('Fetching…', 'working');
+    document.getElementById('refreshBtn').disabled = true;
+    try {
+        const r  = await fetch(`${BASE}/api/news?mode=${mode}&_=${Date.now()}`, { cache:'no-store' });
+        const js = await r.json();
+        if (js.status === 'success') {
+            allArticles = js.categories.all_news;
+            render(allArticles);
+            setBadge('Ready', 'ready');
+            countdown = REFRESH_S;
+        } else throw new Error('bad response');
+    } catch (e) {
+        console.error('fetch error', e);
+        setBadge('Error', 'error');
+    }
+    fetching = false;
+    document.getElementById('refreshBtn').disabled = false;
+}
+
+async function manualRefresh() {
+    console.log('🔄 Manual refresh – scraping NOW');
+    await loadNews('fresh');
+}
+
+// ── countdown tick ──────────────────────────────────────────────
+function tickCountdown() {
+    countdown--;
+    if (countdown < 0) countdown = REFRESH_S;
+    const mm = String(Math.floor(countdown/60)).padStart(2,'0');
+    const ss = String(countdown % 60).padStart(2,'0');
+    document.getElementById('countdown').textContent = `${mm}:${ss}`;
+}
+
+// ── status poller ───────────────────────────────────────────────
+async function pollStatus() {
+    try {
+        const r  = await fetch(`${BASE}/api/status?_=${Date.now()}`, { cache:'no-store' });
+        const st = await r.json();
+        if (st.live_mtime && st.live_mtime !== lastMtime) {
+            console.log('🔀 Server swapped news_live.json – reloading…');
+            lastMtime = st.live_mtime;
+            await loadNews('live');
+            countdown = REFRESH_S;
+        }
+    } catch { /* server not up yet */ }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+(async () => {
+    console.log('🚀 Tamil News Dashboard – Final');
+
+    // 1) load catalogue (includes persisted selection flags)
+    try {
+        const r  = await fetch(`${BASE}/api/newspapers?_=${Date.now()}`, { cache:'no-store' });
+        const js = await r.json();
+        catalogue = js.newspapers || [];
+    } catch(e) {
+        console.error('catalogue fetch failed', e);
+        catalogue = [];
+    }
+    renderPicker();
+
+    // 2) load news
+    await loadNews('live');
+
+    // 3) timers
+    setInterval(tickCountdown, 1000);
+    setInterval(pollStatus,    POLL_MS);
+})();
+</script>
+</body>
+</html>
